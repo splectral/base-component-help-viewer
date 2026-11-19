@@ -1,0 +1,14 @@
+{
+  "name": "splectral-base-help-viewer",
+  "version": "0.1.0",
+  "description": "Module: the help viewer, a Splectral component on its own: one page that shows the answer of a help info request, the default or the one asked for, as the command line reads it.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "brittle-bare test/*.test.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "brittle": "4.5.0"
+  }
+}
