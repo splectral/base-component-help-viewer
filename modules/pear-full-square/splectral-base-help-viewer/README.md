@@ -30,6 +30,8 @@ the human sees what the AI reads on the command line.
   package, one module, one page; no protocol, no element set, no
   renderer apart. What it teaches is the start of the generic viewer
   and of a renderer every component shares.
+- **Help specific** (the team, 2026-11-19): its page, layout and all,
+  is shaped for help alone; nothing in it is kept general for later.
 
 ## Tests
 
