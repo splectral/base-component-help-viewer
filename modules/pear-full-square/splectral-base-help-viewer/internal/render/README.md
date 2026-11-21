@@ -32,15 +32,8 @@ None thrown: what fails is the page's `error`.
 - **The page's execution**: `exec.mrepos()`, the install's mrepos;
   `exec.data(at, command)`, the platform's data, a promise of the
   command's output (its error thrown); `exec.record(at, command)`, the
-  response whole, as the terminal reads it; `exec.typed(at, command,
-  as)`, the answer asked typed, as a schema (its URI), the response
-  whole beside it; `exec.log(level, event, data)`.
-- **Typed answers** (`as`): the server writes them back as AVRO
-  (`.avro`, `splectral-server`, `internal/typed`), read here by the
-  install's registry (the component's record's `schemas`), their output
-  as the help page needs it, `ANSWER`
-  (`haiccing/base-package-help/annotate-answer`), where it reads as it
-  (is-like), else as written.
+  response whole, as the terminal reads it; `exec.log(level, event,
+  data)`.
 - **Answers kept**: `data`'s, by mrepo and command, while the program
   runs: the platform's data does not change while the install does not.
   Dropped when the mrepos' `version` moved (a deploy, a teardown, a

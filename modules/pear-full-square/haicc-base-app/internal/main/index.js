@@ -22,10 +22,6 @@ const CONSOLE = { out: line => console.log(line), err: line => console.error(lin
 // stdin whole, as text: a heredoc's lines
 const readStdin = () => new Promise(resolve => { if (process.stdin.isTTY) return resolve(''); let text = ''; process.stdin.on('data', d => { text += d.toString() }); process.stdin.on('end', () => resolve(text)) })
 
-// An answer in natural language: an output's `answer`, its lines (help,
-// haici); null when it has none.
-const answerOf = o => { const a = o?.output?.answer; return Array.isArray(a) && a.length && a.every(l => typeof l === 'string') ? a : null }
-
 export async function main (argv, { env = {}, bare = os.execPath(), io = CONSOLE } = {}) {
   const home = env.HAICC_HOME || join(os.homedir(), '.haicc')
   const work = env.HAICC_WORK || join(home, 'work')
@@ -58,10 +54,9 @@ export async function main (argv, { env = {}, bare = os.execPath(), io = CONSOLE
     // one command sent, its response printed; -> its outcome
     const send = async parts => {
       const { text } = await request(root, parts, { uri: CONFIG.root.uri, reply: CONFIG.reply, timeout })
-      const o = outcome(text)
       if (print === 'raw') io.out(text.replace(/\n$/, ''))
-      // an output that answers in natural language: its lines; else the record unpacked
-      if (print === 'record') { const lines = answerOf(o); if (lines) for (const l of lines) io.out(l); else io.out(unpack(text, widthOf(home, io.columns?.() ?? null).width)) }
+      if (print === 'record') io.out(unpack(text, widthOf(home, io.columns?.() ?? null).width))
+      const o = outcome(text)
       if (!o) throw new Failure('the response holds no completed form', 5)
       if ('error' in o) throw new Failure(o.error, 1)
       if (print === 'output') io.out(JSON.stringify(o.output))

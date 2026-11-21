@@ -4,7 +4,6 @@
 import { unpack } from 'haicc-base-app'
 import { words } from 'mrepo-base-request'
 import { draw } from '../draw/index.js'
-import { ANSWER } from '../render/index.js'
 
 // The mrepo read when none is asked for: the docs mrepo, the install's
 // manual.
@@ -141,9 +140,7 @@ async function commandPage (exec, query) {
   let text = null
   let form = null
   let error = null
-  // asked typed: help/annotate's answer as its schema (ANSWER), its
-  // response whole beside it for the raw view
-  try { form = await exec.typed(at, command, ANSWER); text = form.record ?? null } catch (err) { error = err.message }
+  try { text = await exec.record(at, command); form = JSON.parse(text).value.value } catch (err) { error = err.message }
   exec.log('verbose', 'command', { at, command: command.join(' '), raw, error })
   if (raw) return draw({ title, nav, box, view: { label: 'page', href: self(false) }, raw: text === null ? null : unpack(text, WIDTH), error: text === null ? error : null, footer })
   const view = { label: 'raw', href: self(true) }

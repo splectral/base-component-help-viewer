@@ -6,8 +6,6 @@ import { join, dirname } from 'bare-path'
 import { tmpdir } from 'bare-os'
 import { fileURLToPath } from 'bare-url'
 import { unpack } from 'haicc-base-app'
-import { registry, schemasOf, isSingle, decode, fingerprintIn } from 'mycelium-value-avro'
-import { typedBox } from 'splectral-server'
 import { markdown, inline, escape, draw, page, DEFAULT, WIDTH, render } from '../index.js'
 
 const here = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -58,8 +56,6 @@ function execution (answers, { mrepos = { version: 1, mrepos: [{ at: '.', depth:
     mrepos: async () => { if (mrepos instanceof Error) throw mrepos; return mrepos },
     data: async (at, command) => { asked.push([at, ...command]); const a = answers[`${at} ${command.join(' ')}`]; if (a instanceof Error || a === undefined) throw a ?? new Error(`no page here: ${command[1]}`); return a },
     record: async (at, command) => { asked.push(['raw', at, ...command]); const r = records[`${at} ${command.join(' ')}`]; if (r === undefined) throw new Error('no response'); return r },
-    // asked typed: the completed data form as the server answers it, the response whole beside it
-    typed: async (at, command, as) => { asked.push(['raw', at, ...command]); asked.as = as; const r = records[`${at} ${command.join(' ')}`]; if (r === undefined) throw new Error('no response'); const done = JSON.parse(r).value.value; return 'error' in done ? { error: done.error, record: r } : { output: done.output, record: r } },
     log () {}
   }
 }
@@ -125,7 +121,6 @@ test('page: the command box: a command as typed after haicc, sent with the help 
   const exec = execution(DOCS, { records })
   const html = await page(exec, { uri: '', query: { cmd: 'haicc host crud/read swarms' } })
   t.alike(exec.asked.at(-1), ['raw', 'host', 'crud/read', 'swarms', '--flags', 'help'], 'sent at its position with the help flag: answered, nothing of it run; never kept')
-  t.is(exec.asked.as, 'haiccing/base-package-help/annotate-answer', 'asked typed: as help/annotate\'s answer')
   t.ok(html.includes('<h1><code>haicc host crud/read swarms</code></h1>'), 'the command as understood, as typed')
   t.ok(html.includes('<dt>does</dt><dd>The nodes at a URI, read.</dd>'), 'what it does')
   t.ok(html.includes('<dd class="taken">taken here, now</dd>'), 'the door\'s answer here and now')
@@ -229,49 +224,6 @@ test('render: a page asked in the inbox, the mrepos and its data asked through t
     t.ok(await until(() => taken(outbox, bad)))
     t.is(taken(outbox, bad).value.value.error, 'not an mrepo\'s position: ../x', 'a page that cannot be made: its error')
     t.ok(r.entries().some(e => e.event === 'page'), 'what it logged kept')
-  } finally {
-    clearInterval(server)
-    r.stop()
-    rmSync(dir, { recursive: true, force: true })
-  }
-})
-
-test('render: help asked typed: its answer back from the server as AVRO, read as help/annotate\'s answer; one written as json read as written', { timeout: 30000 }, async (t) => {
-  const { dir, side: s } = side()
-  const inbox = join(s, 'inbox')
-  const outbox = join(s, 'outbox')
-  const store = join(dir, 'store')
-  const reg = registry(schemasOf(store))
-  // what a deploy registers: help's answer, the server's data form
-  reg.add({ type: 'record', name: 'haiccing.basePackageHelp.annotateAnswer', fields: ['help', 'door', 'arguments', 'run', 'more'].map(name => ({ name, type: 'string' })).concat([{ name: 'does', type: ['null', 'string'], default: null }, { name: 'answer', type: { type: 'array', items: 'string' }, default: [] }]) })
-  reg.add(JSON.parse(readFileSync(join(here, '..', 'splectral-server', 'schemas', 'data.json'), 'utf8')))
-  const installed = { ...JSON.parse(readFileSync(join(s, 'component.json'), 'utf8')), folder: dir, schemas: schemasOf(store) }
-  const r = render({ side: s, installed, every: 200 })
-  const answer = { help: 'crud/read swarms', does: 'The nodes at a URI, read.', door: 'taken here, now', arguments: 'none', run: 'crud/read swarms', more: 'info/get crud/read', answer: ['crud/read swarms: read.'] }
-  const files = []
-  // the server: each data request answered typed, as the real one does (typedBox)
-  const server = setInterval(() => {
-    for (const name of readdirSync(outbox)) {
-      const asked = JSON.parse(readFileSync(join(outbox, name), 'utf8'))
-      const form = asked.value.value
-      if (form.request === 'page') continue
-      rmSync(join(outbox, name))
-      if (form.request === 'mrepos') { put(inbox, asked.key, envelope(asked.key, { ...form, output: { version: 1, mrepos: [{ at: '.', depth: 0 }, { at: 'host', depth: 1 }] } })); continue }
-      const output = form.command.includes('nope') ? { run: false, command: 'crud/read x --flags help nope', why: ['no flag: nope'] } : answer
-      typedBox(installed).write(asked.key, envelope(asked.key, { ...form, output, record: '{}' }))
-      files.push(readFileSync(join(inbox, `${asked.key}.avro`)))
-    }
-  }, 50)
-  const ask = async (key, query) => { put(inbox, key, envelope(key, { request: 'page', path: '', query })); return (await until(() => taken(outbox, key))) ? taken(outbox, key).value.value : null }
-  try {
-    const done = await ask('66666666-6666-4666-8666-666666666666', { cmd: 'host crud/read swarms' })
-    t.ok(files.length && files.every(isSingle), 'the answer in its inbox as AVRO, single-object encoded')
-    const levels = b => decode(reg, decode(reg, decode(reg, b).value).value)
-    t.is(reg.get(fingerprintIn(levels(files.at(-1)).output)).uri, 'haiccing/base-package-help/annotate-answer', 'its output written as help/annotate\'s answer, the level below the data form')
-    t.ok(done.output.includes('<dt>does</dt><dd>The nodes at a URI, read.</dd>'), 'its help drawn from the typed answer')
-    const not = await ask('77777777-7777-4777-8777-777777777777', { cmd: 'host crud/read x --flags nope' })
-    t.ok(not.output.includes('<p class="error">not run: no flag: nope</p>'), 'an answer not like it (not run): written as json, read as written')
-    t.is(reg.get(fingerprintIn(levels(files.at(-1)).output)).uri, 'pear-full-square/mycelium-value-avro/json', 'that one: json')
   } finally {
     clearInterval(server)
     r.stop()

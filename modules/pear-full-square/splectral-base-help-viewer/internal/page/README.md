@@ -11,8 +11,7 @@ drawn. The docs mrepo is read unless another is asked for
 ## Signature
 
 `page(exec, { uri, query })`: `exec` what the program hands it (`render`):
-`mrepos()`, `data(at, command)`, `record(at, command)`, `typed(at,
-command, as)` and `log(level,
+`mrepos()`, `data(at, command)`, `record(at, command)` and `log(level,
 event, data)`.
 
 ## Arguments
@@ -62,9 +61,8 @@ the response printed; the command it shows, at the end.
 - **The command box** (the team, 2026-11-20): a command typed is sent
   with the help flag on its last command (into its own list when it has
   one), so nothing of it is executed (a rewrite, strict:
-  `mrepo-base-request`); `help/annotate`'s answer, asked typed as its
-  schema (AVRO from the server, `haiccing/base-package-help/annotate-answer`),
-  drawn where it would run: the command, what it does, the door's answer here and now, its
+  `mrepo-base-request`); `help/annotate`'s answer drawn where it would
+  run: the command, what it does, the door's answer here and now, its
   arguments, `run it` with the position typed in front, `read more` a
   link to that page at that mrepo, in this viewer. Not run, an error,
   not a command: said. Never kept: the door's answer is now. `?raw` the

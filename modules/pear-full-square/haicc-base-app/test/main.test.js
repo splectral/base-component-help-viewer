@@ -113,7 +113,7 @@ test('haicc sources: printed a line a source', async (t) => {
   } finally { s.remove() }
 })
 
-test('a command for the mrepos: its response printed unpacked, as stored, or its output alone, or its answer\'s lines; an error, exit 1; not run, exit 1; no completed form, exit 5; none in time, exit 4', async (t) => {
+test('a command for the mrepos: its response printed unpacked, as stored, or its output alone; an error, exit 1; not run, exit 1; no completed form, exit 5; none in time, exit 4', async (t) => {
   const s = setup()
   try {
     mkdirSync(join(s.root, 'inbox'), { recursive: true }); mkdirSync(join(s.root, 'outbox'))
@@ -164,17 +164,6 @@ test('a command for the mrepos: its response printed unpacked, as stored, or its
     a = answer(s.root, { output: { service: 'started', state: 'started' } })
     t.is(await s.run(['host', 'service/start'], { HAICC_OUTPUT: '1', HAICC_RAW: '1' }), 0); await a
     t.alike(s.out, ['{"service":"started","state":"started"}'], 'HAICC_OUTPUT=1: the same, before HAICC_RAW')
-
-    const said = { feedback: 'recorded', id: 'r-1', answer: ['Feedback on crud/read x recorded: request r-1.', 'To read it back: crud/read done/r-1.json --flags layer=request'] }
-    a = answer(s.root, { output: said })
-    t.is(await s.run(['.', 'crud/read', 'x', '--flags', 'feedback', 'hm']), 0); await a
-    t.alike(s.out, said.answer, 'an output that answers in natural language: its lines, not the record')
-    a = answer(s.root, { output: said })
-    t.is(await s.run(['--output', '.', 'crud/read', 'x', '--flags', 'feedback', 'hm']), 0); await a
-    t.alike(s.out, [JSON.stringify(said)], '--output: the output, as ever')
-    a = answer(s.root, { output: said })
-    t.is(await s.run(['--raw', '.', 'crud/read', 'x', '--flags', 'feedback', 'hm']), 0); ({ text } = await a)
-    t.alike(s.out, [text.trim()], '--raw: the record')
 
     a = answer(s.root, { error: 'deployed already: /host' })
     t.is(await s.run(['.', 'boot/deploy', 'host', 'x']), 1, 'an error: exit 1')
