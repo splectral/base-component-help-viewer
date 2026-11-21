@@ -3,18 +3,18 @@
 // becomes markup.
 export const escape = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 
-// A line's inline markup: code first (nothing inside it is markup), then
-// links, bold, italic. link(href) may rewrite a link's address.
+// A line's inline markup: code first (nothing inside it is markup, each
+// span held aside), then links, bold, italic over the whole line, so
+// they may hold code; then the code put back. link(href) may rewrite a
+// link's address.
+const HELD = /\u0000(\d+)\u0000/g
 export function inline (text, { link = h => h } = {}) {
-  const parts = String(text).split(/(`[^`]*`)/)
-  return parts.map(p => {
-    if (p.length > 1 && p.startsWith('`') && p.endsWith('`')) return `<code>${escape(p.slice(1, -1))}</code>`
-    let s = escape(p)
-    s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, href) => `<a href="${escape(link(href.replace(/&amp;/g, '&')))}">${label}</a>`)
-    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    s = s.replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?!\w)/g, '$1<em>$2</em>')
-    return s
-  }).join('')
+  const code = []
+  let s = escape(String(text).replace(/\u0000/g, '').replace(/`([^`]*)`/g, (m, c) => `\u0000${code.push(c) - 1}\u0000`))
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, href) => `<a href="${escape(link(href.replace(/&amp;/g, '&')))}">${label}</a>`)
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  s = s.replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?!\w)/g, '$1<em>$2</em>')
+  return s.replace(HELD, (m, i) => `<code>${escape(code[Number(i)])}</code>`)
 }
 
 const isTableRow = l => /^\s*\|.*\|\s*$/.test(l)

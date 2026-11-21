@@ -36,7 +36,8 @@ haicc splectral/<position> service/start
 - **Its program**: started by `runtime/start . splectral/packages/<the
   first of its list>`; the server knows it runs by that program's
   state. It follows the Splectral inbox: a page asked for, `{ request:
-  "page", path, query, base }`, answered in the outbox; the data it
+  "page", path, query }`, answered in the outbox, its links relative
+  to its section; the data it
   needs asked there, `{ request: "data", at, command }`, a command as
   typed at a position from the root, its answer back in the inbox.
 - **Deploy and teardown**: no upgrade in place. A change is `haicc

@@ -22,7 +22,10 @@ help info it shows (`info/get <keywords>` at the docs mrepo, or at
 back. Ended by the `stop` hook, and with its runtime.
 
 `/help/hdlc/validation` is `haicc docs info/get hdlc/validation`, drawn:
-the human sees what the AI reads on the command line.
+the human sees what the AI reads on the command line. A drop-down the
+mrepo, one a level of keywords, each level's choices its parent's own
+answer; `?raw`, the response as the terminal prints it. A command box:
+a command typed answered with help where it would run, never run.
 
 ## Design
 

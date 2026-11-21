@@ -31,13 +31,24 @@ test('the program: its page made over its Splectral boxes; its state; ended with
     t.ok(await until(() => existsSync(state)), 'its state written once it follows its inbox')
     t.is(JSON.parse(readFileSync(state, 'utf8')).component, 'splectral/base-component-help-viewer', 'the component it runs for')
     const key = '11111111-1111-4111-8111-111111111111'
-    put(join(side, 'inbox'), key, envelope(key, { request: 'page', path: 'hdlc', query: {}, base: '/help' }))
-    t.ok(await until(() => readdirSync(join(side, 'outbox')).length === 1), 'a data request in its outbox')
-    const name = readdirSync(join(side, 'outbox'))[0]
-    const asked = JSON.parse(readFileSync(join(side, 'outbox', name), 'utf8'))
-    t.alike(asked.value.value, { request: 'data', at: 'docs', command: ['info/get', 'hdlc'] })
-    rmSync(join(side, 'outbox', name))
-    put(join(side, 'inbox'), asked.key, envelope(asked.key, { ...asked.value.value, output: { keyword: 'hdlc', choices: [{ title: 'HDLC', page: 'How work is done.' }] } }))
+    put(join(side, 'inbox'), key, envelope(key, { request: 'page', path: 'hdlc', query: {} }))
+    // the server, as far as the test goes: what the page asks for in the outbox, answered in the inbox
+    const asked = []
+    const answer = () => {
+      for (const name of readdirSync(join(side, 'outbox'))) {
+        const r = JSON.parse(readFileSync(join(side, 'outbox', name), 'utf8'))
+        const form = r.value.value
+        if (form.request === 'page') continue
+        rmSync(join(side, 'outbox', name))
+        asked.push(form)
+        const output = form.request === 'mrepos' ? { version: 1, mrepos: [{ at: '.', depth: 0 }, { at: 'docs', depth: 1 }] } : { keyword: form.command[1] ?? '.', choices: [{ title: form.command[1] === 'hdlc' ? 'HDLC' : 'docs', page: 'How work is done.', below: [] }] }
+        put(join(side, 'inbox'), r.key, envelope(r.key, { ...form, output }))
+      }
+      return asked.length >= 3
+    }
+    t.ok(await until(answer), 'the install\'s mrepos and its data asked in its outbox')
+    t.alike(asked[0], { request: 'mrepos' }, 'the mrepos first')
+    t.alike(asked.slice(1).map(f => [f.request, f.at, ...f.command].join(' ')).sort(), ['data docs info/get', 'data docs info/get hdlc'], 'then its data: the page\'s, and the level above it')
     t.ok(await until(() => existsSync(join(side, 'outbox', `${key}.json`))), 'the page answered')
     const html = JSON.parse(readFileSync(join(side, 'outbox', `${key}.json`), 'utf8')).value.value.output
     t.ok(html.includes('<h1>HDLC</h1><p>How work is done.</p>'), 'the help info drawn')

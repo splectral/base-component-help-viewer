@@ -20,6 +20,9 @@ None: what is not recognised stays text.
 
 ## Design
 
+- **Code first, held aside**: a code span is never markup; bold, italic
+  and links run over the whole line, so they may hold code
+  (`**\`haicc scripts\`**`).
 - **Escaped first**: the text is never taken as HTML; only what is
   recognised becomes markup.
 - **What is recognised**: headings, paragraphs, lists (bulleted and
