@@ -36,7 +36,9 @@ The exit code, a number.
 
 - **A command for the mrepos**, `haicc <URI> <protocol>/<action>
   <argument>...`: written into the root mrepo's inbox folder; the
-  response record printed whole, unpacked across lines; exit 0 when its
+  response record printed whole, unpacked across lines, or, when its
+  output answers in natural language (`answer`, its lines: help, haici),
+  those lines (the record with `--raw`); exit 0 when its
   completed form holds an output, 1 an error, which is also said on
   stderr; 1 too for a command its flags kept from being run (its output
   `run: false`, completed, not failed), `not run:` and why said on
