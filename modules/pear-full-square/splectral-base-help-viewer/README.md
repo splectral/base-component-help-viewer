@@ -17,11 +17,12 @@ side and everything it does. Offered by
 
 Started by the component's `start` hook (`runtime/start`), it takes
 each page the server asks for from the inbox, asks the platform for the
-help info it shows (`info/get <keywords>` at the docs mrepo, or at
-`?at=<position>`) through the outbox, draws the page and writes it
+help info it shows (`info/get <keywords>` at the docs mrepo, found by
+its unique URI, `local/docs`, wherever it is; or at `?at=<position>`)
+through the outbox, draws the page and writes it
 back. Ended by the `stop` hook, and with its runtime.
 
-`/help/hdlc/validation` is `haicc docs info/get hdlc/validation`, drawn:
+`/help/haiccing/base-docs-hdlc/validation` is `haicc docs info/get haiccing/base-docs-hdlc/validation`, drawn:
 the human sees what the AI reads on the command line. A drop-down the
 mrepo, one a level of keywords, each level's choices its parent's own
 answer; `?raw`, the response as the terminal prints it. A command box:

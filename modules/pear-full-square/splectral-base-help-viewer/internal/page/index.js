@@ -4,10 +4,16 @@
 import { unpack } from 'haicc-base-app'
 import { words } from 'mrepo-base-request'
 import { draw } from '../draw/index.js'
+import { ANSWER } from '../render/index.js'
 
 // The mrepo read when none is asked for: the docs mrepo, the install's
-// manual.
-export const DEFAULT = 'docs'
+// manual, by its unique URI, fixed in the base family; where it is (at the
+// root, below a solution) the server finds in the install's registry.
+export const DOCS = 'local/docs'
+// Its position from the root, the server's answer; none: said on the page.
+// -> { at, error }
+// log: none (one request; the page says what came of it)
+const home = exec => exec.mrepo(DOCS).then(m => ({ at: m.position, error: null }), err => ({ at: null, error: `the docs mrepo, ${DOCS}: ${err.message} (?at=<position> reads another mrepo)` }))
 // The width a raw page is printed to: the terminal's when its output is
 // no terminal.
 export const WIDTH = 80
@@ -38,8 +44,15 @@ function mreposOf (list, at, address) {
 // mounted (the site gives the page its base).
 export async function page (exec, { uri = '', query = {} } = {}) {
   if (typeof query.cmd === 'string') return commandPage(exec, query)
+  if (query.at !== undefined && !AT.test(query.at)) throw new Error(`not an mrepo's position: ${query.at}`)
+  // the mrepos first (what is kept is dropped when the install changed),
+  // then where the docs mrepo is
+  // catch: the mrepos not known (the server did not say): this one alone in its drop-down
+  const list = await exec.mrepos().catch(() => null)
+  const docs = await home(exec)
+  const DEFAULT = docs.at
   const at = query.at ?? DEFAULT
-  if (!AT.test(at)) throw new Error(`not an mrepo's position: ${at}`)
+  if (at === null) return draw({ title: DOCS, nav: { mrepos: [], levels: [] }, box: { value: '', placeholder: 'docs info/get' }, error: docs.error })
   const raw = 'raw' in query
   const keywords = String(uri ?? '').split('/').filter(Boolean).join('/')
   const names = keywords ? keywords.split('/') : []
@@ -49,10 +62,7 @@ export async function page (exec, { uri = '', query = {} } = {}) {
     return `${k || './'}${q.length ? `?${q.join('&')}` : ''}`
   }
   const command = keywords ? ['info/get', keywords] : ['info/get']
-  // the mrepos first (what is kept is dropped when the install changed),
   // then this page's answer and each level's above it, asked at once
-  // catch: the mrepos not known (the server did not say): this one alone in its drop-down
-  const list = await exec.mrepos().catch(() => null)
   const parents = names.map((_, i) => names.slice(0, i).join('/'))
   const [above, current] = await Promise.all([
     // catch: a level above that does not answer: its drop-down holds this page's keyword alone
@@ -85,8 +95,11 @@ export async function page (exec, { uri = '', query = {} } = {}) {
     return draw({ title, nav, box, view: { label: 'page', href: address(keywords, { asRaw: false }) }, raw: current.text === null ? null : unpack(current.text, WIDTH), error: current.text === null ? error : null, footer })
   }
   const choices = Array.isArray(answer?.choices) ? answer.choices : []
-  // where a section is from, when that is not obvious: several answers, or one page several packages share
-  const from = c => (choices.length > 1 || (c.packages?.length ?? 0) > 1) ? (c.packages ?? []) : []
+  // where a section is from: its package, the context it is read in, its
+  // frame (a package is self-contained: its boundary visible); without
+  // one, when that is not obvious: several answers, or one page several
+  // packages share
+  const from = c => c.context ? [c.context] : (choices.length > 1 || (c.packages?.length ?? 0) > 1) ? (c.packages ?? []) : []
   const sections = choices.map(c => ({
     title: c.title,
     from: from(c),
@@ -125,10 +138,11 @@ async function commandPage (exec, query) {
   const [position, ...rest] = parts
   if (!problem && (!position || !rest.length)) problem = 'a command as typed after haicc: <position> <protocol>/<action> [<argument>...] (. the root)'
   if (!problem && !AT.test(position)) problem = `not an mrepo's position: ${position}`
-  const at = problem ? (AT.test(query.at ?? '') ? query.at : DEFAULT) : position
-  const address = (k, { mrepo = at } = {}) => `${k || './'}${mrepo === DEFAULT ? '' : `?at=${encodeURIComponent(mrepo)}`}`
   // catch: the mrepos not known (the server did not say): this one alone in its drop-down
   const list = await exec.mrepos().catch(() => null)
+  const DEFAULT = (await home(exec)).at ?? '.'
+  const at = problem ? (AT.test(query.at ?? '') ? query.at : DEFAULT) : position
+  const address = (k, { mrepo = at } = {}) => `${k || './'}${mrepo === DEFAULT ? '' : `?at=${encodeURIComponent(mrepo)}`}`
   const nav = { mrepos: mreposOf(list, at, address), levels: [] }
   const box = { value: typed, placeholder: `${at} info/get` }
   const title = `${typed || 'a command'} · help`
@@ -140,7 +154,9 @@ async function commandPage (exec, query) {
   let text = null
   let form = null
   let error = null
-  try { text = await exec.record(at, command); form = JSON.parse(text).value.value } catch (err) { error = err.message }
+  // asked typed: help/annotate's answer as its schema (ANSWER), its
+  // response whole beside it for the raw view
+  try { form = await exec.typed(at, command, ANSWER); text = form.record ?? null } catch (err) { error = err.message }
   exec.log('verbose', 'command', { at, command: command.join(' '), raw, error })
   if (raw) return draw({ title, nav, box, view: { label: 'page', href: self(false) }, raw: text === null ? null : unpack(text, WIDTH), error: text === null ? error : null, footer })
   const view = { label: 'raw', href: self(true) }

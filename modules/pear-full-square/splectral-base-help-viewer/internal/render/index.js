@@ -3,8 +3,12 @@
 import { rmSync } from 'bare-fs'
 import { join } from 'bare-path'
 import { record, wrap, guid, outboxOf } from 'mrepo-base-request'
-import { follow, TOPIC, SIDE } from 'splectral-server'
+import { registry } from 'mycelium-value-avro'
+import { follow, decodeAnswer, TOPIC, SIDE } from 'splectral-server'
 import { page } from '../page/index.js'
+
+// The schema the help page reads help/annotate's answer as.
+export const ANSWER = 'haiccing/base-package-help/annotate-answer'
 
 const completed = form => form && typeof form === 'object' && ('output' in form || 'error' in form)
 
@@ -39,6 +43,18 @@ export function render ({ side, installed, timeout = 120, every = 2000 }) {
       if (done.output?.version !== version) { kept.clear(); version = done.output?.version ?? null }
       return done.output
     },
+    // An mrepo by its unique URI: its position from the root, as the
+    // server finds it in the install's registry (kept with the rest).
+    mrepo (uri) {
+      const id = JSON.stringify(['mrepo', uri])
+      if (!kept.has(id)) {
+        const answer = asked({ request: 'mrepo', uri }, `the mrepo ${uri}`).then(done => { if ('error' in done) throw new Error(done.error); return done.output })
+        kept.set(id, answer)
+        // catch: an error is not kept, asked again the next time (the page says it)
+        answer.catch(() => kept.delete(id))
+      }
+      return kept.get(id)
+    },
     data (at, command) {
       const id = JSON.stringify([at, command])
       if (!kept.has(id)) {
@@ -53,12 +69,24 @@ export function render ({ side, installed, timeout = 120, every = 2000 }) {
       const done = await asked({ request: 'data', at, command, raw: true }, `${at} ${command.join(' ')}`)
       if (typeof done.record !== 'string') throw new Error(done.error ?? `no response: ${at} ${command.join(' ')}`)
       return done.record
+    },
+    // A command's answer typed: asked as a schema (its URI), the response
+    // whole beside it. -> the completed data form: its output read as
+    // `as` where it was written as it (is-like), else as written (json).
+    async typed (at, command, as) {
+      const done = await asked({ request: 'data', at, command, raw: true, as }, `${at} ${command.join(' ')}`)
+      if (typeof done.record !== 'string' && !('error' in done)) throw new Error(`no response: ${at} ${command.join(' ')}`)
+      return done
     }
   })
+  // the typed answers, read by the install's registry (its record's
+  // `schemas`), the output as the help page needs it
+  const reg = installed.schemas ? registry(installed.schemas) : null
+  const avro = reg ? bytes => decodeAnswer(reg, bytes, { as: ANSWER }) : null
   const following = follow(join(side, 'inbox'), (envelope, file) => {
     rmSync(join(side, 'inbox', file), { force: true })
     const form = envelope?.value?.value
-    if ((form?.request === 'data' || form?.request === 'mrepos') && completed(form)) return pending.get(envelope.key)?.(form)
+    if ((form?.request === 'data' || form?.request === 'mrepos' || form?.request === 'mrepo') && completed(form)) return pending.get(envelope.key)?.(form)
     if (form?.request !== 'page' || completed(form)) return
     const exec = execution()
     const started = Date.now()
@@ -69,6 +97,6 @@ export function render ({ side, installed, timeout = 120, every = 2000 }) {
         exec.log('info', 'page', { path: form.path ?? '', ms: Date.now() - started, ok: !('error' in done) })
         out(envelope.key, { ...form, ...done }, envelope.value.topic)
       })
-  }, { every })
+  }, { every, avro })
   return { stop: () => following.stop(), entries: () => [...entries] }
 }

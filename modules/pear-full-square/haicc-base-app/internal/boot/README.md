@@ -19,13 +19,15 @@ component's organisation and name.
 - `deploy`: the boot's exit code. What the boot prints goes straight
   through: its request, completed, then its runtime's status.
 - `teardown`: `{ tornDown: '.', runtimes, containers, work }`, with the
-  number of runtimes stopped and of containers removed.
+  number of runtimes stopped and of containers removed. Idempotent: no
+  boot mrepo there (torn down already) is a repeat, nothing done, `{
+  ..., again: true, warning }`, the warning on stderr, exit 0.
 
 ## Errors
 
 - `deploy`: no source holds the boot component's bundle: a `Failure`,
   exit code 3.
-- `teardown`: no boot mrepo there: exit code 3. A runtime did not stop,
+- `teardown`: a runtime did not stop,
   or a replica's container was not removed (Docker does not answer):
   exit code 1.
 
@@ -43,4 +45,6 @@ component's organisation and name.
   removed, running or not. Docker is asked only when there is a
   replica. Then it removes what the deploy put in place and what was
   made below it, by name: the mrepos, the replicas, the package store,
-  the work folder's setting. Nothing else in the work folder is touched.
+  the work folder's setting, and the packages' scripts the deploys placed
+  (`scripts/<org>/`). Nothing else in the work folder is touched: the
+  user's scripts, `scripts/<name>.haicc`, are kept.

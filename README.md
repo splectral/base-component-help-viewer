@@ -4,12 +4,13 @@ The help viewer, Splectral's first component: one page showing a help info reque
 
 A component is an app on Splectral: an mrepo Splectral deploys, this
 package laid on top of it. Its page is served at its position:
-`/help/hdlc/validation` is `haicc docs info/get hdlc/validation`, drawn;
-`?at=host` another mrepo; drop-downs lead from page to page; `?raw` as
-the terminal prints it; a command typed in its box: its help, not run.
+`/help/haiccing/base-docs-hdlc/validation` is `haicc docs info/get
+haiccing/base-docs-hdlc/validation`, drawn, the docs mrepo found
+wherever it is; `?at=host` another mrepo; `?raw` as the terminal prints
+it; a command typed in its box: its help, not run.
 
-A standalone first implementation: one package, its program and its
-page in it; the generic viewer is designed from what it teaches.
+A standalone first implementation, one package; the generic viewer is
+designed from what it teaches.
 
 ## Links
 

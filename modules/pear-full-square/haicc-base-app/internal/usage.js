@@ -20,13 +20,6 @@ haicc <URI> --flags <flag>... -- <command>      flags after a URI: that
                                                 layer=<name>, the layer the
                                                 command's URI is read at
                                                 (main without it);
-                                                continuation=<script>, a
-                                                script to go on with, where
-                                                a command has some (a deploy:
-                                                its package's scripts/
-                                                <script>.haicc): its lines
-                                                sent on by haicc as
-                                                haicc/script at the position;
                                                 container, on a boot/deploy:
                                                 the child deployed into a
                                                 Docker container, run there
@@ -43,11 +36,15 @@ haicc boot/deploy                               the machine level: the boot
                                                 root, its runtime started
 haicc boot/teardown                             every runtime stopped, what
                                                 boot/deploy put in place removed
+                                                (your scripts kept); again: a
+                                                warning, nothing done
 haicc scripts                                   the install's scripts by
-                                                name: <home>/scripts/
-                                                <name>.haicc, a folder you
-                                                make (haicc <URI> haicc/file
-                                                <URI> <name> runs one)
+                                                name: <work>/scripts/: each
+                                                package's, placed by a deploy
+                                                (<org>/<package>/<name>), and
+                                                yours (<name>.haicc); haicc
+                                                <URI> haicc/file <URI> <name>
+                                                runs one
 haicc sources                                   the sources registered
 haicc sources unlink <folder>
 haicc sources download <org>...                 an organisation's packages
@@ -57,14 +54,14 @@ haicc sources https | no-https [<org>...]       https as the backup, or not
 
   haicc boot/deploy
   haicc . boot/deploy host haiccing/base-component-haicc
-  haicc host service/initialise
+  haicc host service/stop
   haicc host service/start
   haicc host boot/deploy node-1 haiccing/base-component-haicc
   haicc host haicc node-1 info/get
   haicc host crud/read . --flags log=verbose
   haicc host --flags log=debug -- haicc node-1 crud/read .
   haicc . crud/read "done/*[value/value/protocol='boot']" --flags layer=request
-  haicc . boot/deploy host haiccing/base-component-haicc --flags continuation=start
+  haicc . boot/deploy workbench haiccing/base-solution-workbench
   haicc host boot/teardown node-1
   haicc . boot/teardown host
   haicc boot/teardown
@@ -79,6 +76,8 @@ A request's log is in its record: info unasked, more with --flags
 log=verbose; the requests done, at the request layer:
 haicc host crud/read "done/*" --flags layer=request.
 
-An mrepo answers about itself: haicc host info/get, haicc host info/get boot;
-the platform's documentation, once its mrepo is deployed (haicc . boot/deploy
-docs haiccing/base-component-docs): haicc docs info/get, haicc docs info/get hdlc`
+An mrepo answers about itself: haicc host info/get, haicc host info/get haiccing;
+a package by its name fully qualified: haicc host info/get
+haiccing/base-package-boot/deploy. The platform's documentation, once its mrepo
+is deployed (haicc . boot/deploy docs haiccing/base-component-docs): haicc docs
+info/get, haicc docs info/get haiccing/base-docs-hdlc`

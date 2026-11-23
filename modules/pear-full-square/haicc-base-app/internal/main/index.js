@@ -38,7 +38,7 @@ export async function main (argv, { env = {}, bare = os.execPath(), io = CONSOLE
       return 0
     }
     if (c.kind === 'scripts') {
-      for (const line of scriptsCommand(home, c.args)) io.out(line)
+      for (const line of scriptsCommand(work, c.args)) io.out(line)
       return 0
     }
     if (c.kind === 'output') {
@@ -48,6 +48,8 @@ export async function main (argv, { env = {}, bare = os.execPath(), io = CONSOLE
     if (c.kind === 'machine') {
       const r = await MACHINE[c.protocol][c.action]({ home, work, root, bare, org: CONFIG.org, boot: CONFIG.boot, stdio: io.stdio })
       if (typeof r === 'number') return r
+      // a repeat: its warning on stderr, the answer as ever
+      if (r?.warning) io.err(`haicc: warning: ${r.warning}`)
       io.out(JSON.stringify(r))
       return 0
     }
@@ -71,7 +73,7 @@ export async function main (argv, { env = {}, bare = os.execPath(), io = CONSOLE
     }
     // haicc/script and its URI, no lines after them: the lines from stdin (a heredoc)
     // haicc/file <URI> <name>: the install's script read here, sent as haicc/script
-    const given = withFile(home, c.parts)
+    const given = withFile(work, c.parts)
     const parts = given.at(-2) === 'haicc/script' && io.stdin ? [...given, await io.stdin()] : given
     const o = await send(parts)
     // A continuation: the response says what to go on with, a script, its

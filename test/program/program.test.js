@@ -41,14 +41,15 @@ test('the program: its page made over its Splectral boxes; its state; ended with
         if (form.request === 'page') continue
         rmSync(join(side, 'outbox', name))
         asked.push(form)
-        const output = form.request === 'mrepos' ? { version: 1, mrepos: [{ at: '.', depth: 0 }, { at: 'docs', depth: 1 }] } : { keyword: form.command[1] ?? '.', choices: [{ title: form.command[1] === 'hdlc' ? 'HDLC' : 'docs', page: 'How work is done.', below: [] }] }
+        const output = form.request === 'mrepos' ? { version: 1, mrepos: [{ at: '.', depth: 0 }, { at: 'docs', depth: 1 }] } : form.request === 'mrepo' ? { uri: form.uri, position: 'docs' } : { keyword: form.command[1] ?? '.', choices: [{ title: form.command[1] === 'hdlc' ? 'HDLC' : 'docs', page: 'How work is done.', below: [] }] }
         put(join(side, 'inbox'), r.key, envelope(r.key, { ...form, output }))
       }
-      return asked.length >= 3
+      return asked.length >= 4
     }
     t.ok(await until(answer), 'the install\'s mrepos and its data asked in its outbox')
     t.alike(asked[0], { request: 'mrepos' }, 'the mrepos first')
-    t.alike(asked.slice(1).map(f => [f.request, f.at, ...f.command].join(' ')).sort(), ['data docs info/get', 'data docs info/get hdlc'], 'then its data: the page\'s, and the level above it')
+    t.alike(asked[1], { request: 'mrepo', uri: 'local/docs' }, 'then where the docs mrepo is, by its unique URI')
+    t.alike(asked.slice(2).map(f => [f.request, f.at, ...f.command].join(' ')).sort(), ['data docs info/get', 'data docs info/get hdlc'], 'then its data: the page\'s, and the level above it')
     t.ok(await until(() => existsSync(join(side, 'outbox', `${key}.json`))), 'the page answered')
     const html = JSON.parse(readFileSync(join(side, 'outbox', `${key}.json`), 'utf8')).value.value.output
     t.ok(html.includes('<h1>HDLC</h1><p>How work is done.</p>'), 'the help info drawn')

@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, statSync, rmSync } from 'bare-fs'
 import { join } from 'bare-path'
 import { spawn, spawnSync } from 'bare-subprocess'
+import { SCRIPTS } from 'mrepo-base-request'
 import { sources } from '../sources/index.js'
 import { Failure } from '../failure.js'
 
@@ -64,9 +65,10 @@ function containers (work) {
 
 // haicc boot/teardown: every runtime of the install stopped, the
 // replicas' containers removed, then what boot/deploy put in place
-// removed; what was done.
+// removed; what was done. Idempotent: nothing there (torn down already),
+// a warning, nothing done.
 export async function teardown ({ work, root }) {
-  if (!existsSync(root)) throw new Failure(`no boot mrepo at ${work} (nothing to tear down)`, 3)
+  if (!existsSync(root)) return { tornDown: '.', runtimes: 0, containers: 0, work, again: true, warning: `no boot mrepo at ${work}: nothing to tear down` }
   // the runtime's library only here: nothing else of the app needs it
   const { stop } = await import('mrepo-base-runtime')
   let runtimes = 0
@@ -77,6 +79,10 @@ export async function teardown ({ work, root }) {
   // what boot/deploy put in place, and what was made below it, by name:
   // nothing else in the work folder
   for (const n of ['mrepos', 'containers', 'packages', 'mrepo.json']) rmSync(join(work, n), { recursive: true, force: true })
+  // the packages' scripts, placed by the deploys (scripts/<org>/...); the
+  // user's, scripts/<name>.haicc, kept
+  const scripts = join(work, SCRIPTS)
+  if (existsSync(scripts)) for (const n of readdirSync(scripts)) if (statSync(join(scripts, n)).isDirectory()) rmSync(join(scripts, n), { recursive: true, force: true })
   return { tornDown: '.', runtimes, containers: replicas, work }
 }
 

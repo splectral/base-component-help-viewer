@@ -29,8 +29,8 @@ The tests of haicc-base-app, a section per file, each test by its name.
 
 - a continuation: the response says what to go on with, a script: sent on as haicc/script where it was answered for; its outcome printed
 - the usage; not a command: exit 2, said on stderr
-- nothing booted: an mrepo command and the teardown say so, exit 3; a deploy without the boot component in the sources
+- nothing booted: an mrepo command says so, exit 3; the teardown a repeat, a warning, exit 0; a deploy without the boot component in the sources
 - haicc sources: printed a line a source
 - a command for the mrepos: its response printed unpacked, as stored, or its output alone, or its answer's lines; an error, exit 1; not run, exit 1; no completed form, exit 5; none in time, exit 4
-- boot/teardown: what boot/deploy put in place removed, nothing else; no runtime running: none stopped
+- boot/teardown: what boot/deploy put in place removed, the packages' scripts too, nothing else; no runtime running: none stopped; twice: a repeat
 - the install's scripts: haicc scripts lists them; haicc/file <URI> <name> reads one here and sends it as haicc/script
