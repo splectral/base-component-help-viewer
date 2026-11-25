@@ -2,6 +2,7 @@
 // it says on stderr, its exit code. A boot mrepo's folder stands in for the
 // root: its inbox answered here. No runtime is started.
 import test from 'brittle'
+import { inboxOf, outboxOf } from 'mrepo-base-request'
 import { mkdtempSync, mkdirSync, rmSync, readdirSync, readFileSync, writeFileSync, existsSync } from 'bare-fs'
 import { tmpdir } from 'bare-os'
 import { join } from 'bare-path'
@@ -15,15 +16,16 @@ function setup () {
 }
 // The next record in the root's inbox answered, as its runtime would.
 function answer (root, result) {
-  const seen = new Set(readdirSync(join(root, 'inbox')))
+  // (what arrives after the last one there: a pointer)
+  const last = inboxOf(root).list({ limit: 1 })[0] ?? null
   return new Promise(resolve => {
     const t = setInterval(() => {
-      const file = readdirSync(join(root, 'inbox')).find(f => !seen.has(f) && f.endsWith('.json'))
-      if (!file) return
+      const [offset] = inboxOf(root).list({ after: last, ascending: true, limit: 1 })
+      if (offset === undefined) return
       clearInterval(t)
-      const envelope = JSON.parse(readFileSync(join(root, 'inbox', file), 'utf8'))
-      const text = JSON.stringify({ topic: '/outbox', key: envelope.key, timestamp: '2026-11-14T00:00:00.000Z', headers: {}, value: { ...envelope.value, value: result === null ? envelope.value.value : { command: envelope.value.value, ...result } } }) + '\n'
-      writeFileSync(join(root, 'outbox', file), text)
+      const envelope = inboxOf(root).read(offset)
+      outboxOf(root).put(offset, { topic: '/outbox', offset, timestamp: '2026-11-14T00:00:00.000Z', headers: {}, value: { ...envelope.value, value: result === null ? envelope.value.value : { command: envelope.value.value, ...result } } })
+      const text = readFileSync(outboxOf(root).fileOf(offset), 'utf8')
       resolve({ envelope, text })
     }, 20)
   })
@@ -32,17 +34,17 @@ function answer (root, result) {
 // Every record arriving in the root's inbox answered in turn, each with
 // the next of the results given; -> the commands as they arrived.
 function answerAll (root, results) {
-  const seen = new Set(readdirSync(join(root, 'inbox')))
+  let last = inboxOf(root).list({ limit: 1 })[0] ?? null
   const commands = []
   let done
   const all = new Promise(resolve => { done = resolve })
   const t = setInterval(() => {
-    for (const file of readdirSync(join(root, 'inbox')).filter(f => !seen.has(f) && f.endsWith('.json')).sort()) {
-      seen.add(file)
-      const envelope = JSON.parse(readFileSync(join(root, 'inbox', file), 'utf8'))
+    for (const offset of inboxOf(root).list({ after: last, ascending: true })) {
+      last = offset
+      const envelope = inboxOf(root).read(offset)
       const result = results[commands.length]
       commands.push(envelope.value.value)
-      writeFileSync(join(root, 'outbox', file), JSON.stringify({ topic: '/outbox', key: envelope.key, timestamp: '2026-11-14T00:00:00.000Z', headers: {}, value: { ...envelope.value, value: { command: envelope.value.value, ...result } } }) + '\n')
+      outboxOf(root).put(offset, { topic: '/outbox', offset, timestamp: '2026-11-14T00:00:00.000Z', headers: {}, value: { ...envelope.value, value: { command: envelope.value.value, ...result } } })
       if (commands.length === results.length) { clearInterval(t); done(commands) }
     }
   }, 10)
@@ -125,7 +127,7 @@ test('a command for the mrepos: its response printed unpacked, as stored, or its
     t.is(envelope.value.topic, CONFIG.reply, 'its core addressed back to the terminal')
     t.alike(envelope.value.value, ['boot/deploy', 'host', 'haiccing/base-component-haicc'], 'at the root: the command plain')
     t.is(s.out.length, 1)
-    t.ok(s.out[0].includes('\n    "topic": "/haicc/terminal", "key": "'), 'by default the record unpacked: the core two deep, its entries packed on lines')
+    t.ok(s.out[0].includes('\n    "topic": "/haicc/terminal", "offset": 17'), 'by default the record unpacked: the core two deep, its entries packed on lines')
     t.ok(s.out[0].split('\n').length > 3 && s.out[0].split('\n').every(l => l.length <= 80), 'to 80 columns: the output is no terminal, no width set')
     t.is(JSON.stringify(JSON.parse(s.out[0])), text.trim(), 'packed again: the record as stored')
 
@@ -195,7 +197,7 @@ test('a command for the mrepos: its response printed unpacked, as stored, or its
     t.alike(s.err, ['haicc: the response holds no completed form'])
 
     t.is(await s.run(['.', 'help/get'], { HAICC_TIMEOUT: '0.3' }), 4, 'HAICC_TIMEOUT: no response in time, exit 4')
-    t.ok(/^haicc: no response in 0\.3 s \(the request stays: [0-9a-f-]{36}\)$/.test(s.err[0]), s.err[0])
+    t.ok(/^haicc: no response in 0\.3 s \(the request stays: \d{13}\)$/.test(s.err[0]), s.err[0])
   } finally { s.remove() }
 })
 

@@ -2,7 +2,7 @@
 // data it needs asked of the platform (README.md beside it).
 import { rmSync } from 'bare-fs'
 import { join } from 'bare-path'
-import { record, wrap, guid, outboxOf } from 'mrepo-base-request'
+import { record, guid, queueOf, keyed } from 'mrepo-base-request'
 import { registry } from 'mycelium-value-avro'
 import { follow, decodeAnswer, TOPIC, SIDE } from 'splectral-server'
 import { page } from '../page/index.js'
@@ -22,7 +22,7 @@ export function render ({ side, installed, timeout = 120, every = 2000 }) {
   const kept = new Map()
   let version = null
   // (into the outbox, to the server: the core's topic where its answer goes)
-  const out = (key, form, topic) => outboxOf(side).write(key, wrap(TOPIC, { ...record(topic, form, key) }))
+  const out = (key, form, topic) => queueOf(join(side, 'outbox')).write(key, keyed(TOPIC, record(topic, form), key))
   // A request to the server, its completed form back in the inbox.
   const asked = (form, what) => {
     const key = guid()

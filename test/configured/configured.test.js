@@ -18,7 +18,7 @@ const LIST = ['splectral/base-component-help-viewer']
 const PROGRAM = 'splectral/packages/splectral/base-component-help-viewer'
 
 test('its list of packages: itself only, of its own organisation', (t) => {
-  t.alike(json('mrepo', 'packages', 'layer.json').packages, LIST, 'the component alone: its program and its page in it')
+  t.alike(json('mrepo', 'packages', '.layer.json').packages, LIST, 'the component alone: its program and its page in it')
   t.ok(LIST.every(p => p.startsWith('splectral/')), 'none of another organisation: no haiccing package')
 })
 

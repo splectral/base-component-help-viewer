@@ -17,7 +17,7 @@ component shares comes from what it teaches.
 # cloned from this one (the package how-to); its module beside it, its
 # program and its pages (splectral-base-help-viewer a model)
 cp -a splectral/base-component-help-viewer splectral/<component>
-$EDITOR splectral/<component>/mrepo/packages/layer.json splectral/<component>/mrepo/runtime/hooks/start.haicc
+$EDITOR splectral/<component>/mrepo/packages/.layer.json splectral/<component>/mrepo/runtime/hooks/start.haicc
 # the check: its pre-release
 tools/bare tools/package-test.js splectral/<component>
 # installed on a running Splectral: a plain service-managed mrepo first,

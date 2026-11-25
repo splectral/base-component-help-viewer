@@ -2,7 +2,7 @@
 
 The component's part of the structure: its list of packages, and the runtime config laid on top of its mrepo.
 
-- **Its packages** (`packages/layer.json`): itself only, of the
+- **Its packages** (`packages/.layer.json`): itself only, of the
   `splectral` organisation, placed on the mrepo's Splectral side, not in
   its `packages` layer.
 - **Its runtime config**: its hooks, below, laid by the mrepo itself

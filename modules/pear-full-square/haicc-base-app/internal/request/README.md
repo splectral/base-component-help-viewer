@@ -4,8 +4,10 @@ Sends a command to an mrepo through its inbox folder and waits for the response 
 
 The command goes as a record: the core holds the parts and where the
 completed form is to go back; the envelope around it is addressed to the
-mrepo's inbox. Both carry the same key, a GUID made here, which is also
-the document's name in both folders.
+mrepo's inbox. It is dropped as everyone drops a record
+(`mrepo-base-request`, `drop`): its offset given as it arrives, under
+the inbox folder's lock, on both, and the record's name in both
+folders, in their folders by its digits.
 
 ## Signature
 
