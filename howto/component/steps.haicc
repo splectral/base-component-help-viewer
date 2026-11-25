@@ -1,0 +1,18 @@
+# scene: Splectral in service
+. boot/deploy splectral haiccing/base-package-splectral
+# step: installed on a running Splectral: a plain service-managed mrepo first, then the component on top
+splectral boot/deploy help haiccing/base-package-service
+# expect: "mrepo":"local/help"
+splectral splectral/install help splectral/base-component-help-viewer
+# expect: "installed":"help"
+# expect: "packages":["splectral/base-component-help-viewer"]
+# step: its service started, its program runs: its pages at http://127.0.0.1:4400/help/
+splectral/help service/initialise
+# expect: "state":"initialised"
+splectral/help service/start
+# expect: "state":"started"
+splectral splectral/status
+# expect: "url":"http://127.0.0.1:
+# step: torn down through the platform, as any mrepo (Splectral reads no links of its own: its components are its to tear down)
+splectral boot/teardown help
+# expect: "tornDown":"help"

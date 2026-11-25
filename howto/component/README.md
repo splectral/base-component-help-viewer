@@ -11,7 +11,9 @@ installed in two halves, haicc's then Splectral's. The help viewer is
 the first, a standalone first implementation: a renderer every
 component shares comes from what it teaches.
 
-## Steps
+## Making it
+
+In development, where the packages are built (`base-docs-package`, `howto/`, "Written where"):
 
 ```sh
 # cloned from this one (the package how-to); its module beside it, its
@@ -20,14 +22,11 @@ cp -a splectral/base-component-help-viewer splectral/<component>
 $EDITOR splectral/<component>/mrepo/packages/.layer.json splectral/<component>/mrepo/runtime/hooks/start.haicc
 # the check: its pre-release
 tools/bare tools/package-test.js splectral/<component>
-# installed on a running Splectral: a plain service-managed mrepo first,
-# then the component on top; its service started, its program runs
-haicc splectral boot/deploy <position> haiccing/base-package-service
-haicc splectral splectral/install <position> splectral/<component>
-haicc splectral/<position> service/initialise
-haicc splectral/<position> service/start
-# its pages: http://127.0.0.1:4400/<position>/
 ```
+
+## Steps
+
+The script, [steps.haicc](steps.haicc): each line as typed after `haicc`, what it answers under it; run with `howto/run`, shown here at info extraction.
 
 ## Notes
 
